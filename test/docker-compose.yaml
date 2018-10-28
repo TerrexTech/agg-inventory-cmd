@@ -7,7 +7,7 @@ version: '3.4'
 # See the run_test.sh file.
 services:
   cassandra:
-    image: bitnami/cassandra
+    image: cassandra:latest
     container_name: cassandra
     ports:
       - "9042:9042"
