@@ -10,7 +10,7 @@ if [[ $rc != 0 ]]
 fi
 
 function ping_cassandra() {
-  docker exec -it cassandra /opt/bitnami/cassandra/bin/nodetool status | grep UN
+  docker exec -it cassandra /usr/bin/nodetool status | grep UN
   res=$?
 }
 
@@ -35,11 +35,8 @@ else
   echo "Cassandra response received."
 fi
 
-# The Cassandra image takes more time to be ready despite
-# nodetool-status being success.
-# There has to be a better way than this.
 echo "Waiting additional time for Cassandra to be ready."
-add_wait=55
+add_wait=20
 cur_add_wait=0
 while (( ++cur_add_wait != add_wait ))
 do
@@ -49,11 +46,11 @@ done
 
 docker-compose up -d --build --force-recreate go-eventpersistence
 echo "Waiting for go-eventpersistence to initialize"
-sleep 10
+sleep 5
 
 docker-compose up -d --build --force-recreate go-eventstore-query
 echo "Waiting for go-eventstore-query to initialize"
-sleep 10
+sleep 5
 
 docker-compose up -d --build --force-recreate agg-inventory-cmd
 sleep 5

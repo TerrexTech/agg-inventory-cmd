@@ -88,40 +88,46 @@ func main() {
 			log.Fatalln(err)
 
 		case eventResp := <-eventPoll.Delete():
-			err := eventResp.Error
-			if err != nil {
-				err = errors.Wrap(err, "Error in Delete-EventResponse")
-				log.Println(err)
-				continue
-			}
-			kafkaResp := inventory.Delete(mc.AggCollection, &eventResp.Event)
-			if kafkaResp != nil {
-				eventPoll.ProduceResult() <- kafkaResp
-			}
+			go func(eventResp *poll.EventResponse) {
+				err := eventResp.Error
+				if err != nil {
+					err = errors.Wrap(err, "Error in Delete-EventResponse")
+					log.Println(err)
+					return
+				}
+				kafkaResp := inventory.Delete(mc.AggCollection, &eventResp.Event)
+				if kafkaResp != nil {
+					eventPoll.ProduceResult() <- kafkaResp
+				}
+			}(eventResp)
 
 		case eventResp := <-eventPoll.Insert():
-			err := eventResp.Error
-			if err != nil {
-				err = errors.Wrap(eventResp.Error, "Error in Insert-EventResponse")
-				log.Println(err)
-				continue
-			}
-			kafkaResp := inventory.Insert(mc.AggCollection, &eventResp.Event)
-			if kafkaResp != nil {
-				eventPoll.ProduceResult() <- kafkaResp
-			}
+			go func(eventResp *poll.EventResponse) {
+				err := eventResp.Error
+				if err != nil {
+					err = errors.Wrap(eventResp.Error, "Error in Insert-EventResponse")
+					log.Println(err)
+					return
+				}
+				kafkaResp := inventory.Insert(mc.AggCollection, &eventResp.Event)
+				if kafkaResp != nil {
+					eventPoll.ProduceResult() <- kafkaResp
+				}
+			}(eventResp)
 
 		case eventResp := <-eventPoll.Update():
-			err := eventResp.Error
-			if err != nil {
-				err = errors.Wrap(err, "Error in Update-EventResponse")
-				log.Println(err)
-				continue
-			}
-			kafkaResp := inventory.Update(mc.AggCollection, &eventResp.Event)
-			if kafkaResp != nil {
-				eventPoll.ProduceResult() <- kafkaResp
-			}
+			go func(eventResp *poll.EventResponse) {
+				err := eventResp.Error
+				if err != nil {
+					err = errors.Wrap(err, "Error in Update-EventResponse")
+					log.Println(err)
+					return
+				}
+				kafkaResp := inventory.Update(mc.AggCollection, &eventResp.Event)
+				if kafkaResp != nil {
+					eventPoll.ProduceResult() <- kafkaResp
+				}
+			}(eventResp)
 		}
 	}
 }
