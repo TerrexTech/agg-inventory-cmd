@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"os"
+
+	"github.com/TerrexTech/agg-inventory-cmd/inventory"
 
 	"github.com/TerrexTech/go-commonutils/commonutil"
 	"github.com/TerrexTech/go-eventspoll/poll"
@@ -19,6 +22,9 @@ func loadKafkaConfig() (*poll.KafkaConfig, error) {
 	cEventQueryTopic := os.Getenv("KAFKA_CONSUMER_EVENT_QUERY_TOPIC")
 	pEventQueryTopic := os.Getenv("KAFKA_PRODUCER_EVENT_QUERY_TOPIC")
 	pResponseTopic := os.Getenv("KAFKA_PRODUCER_RESPONSE_TOPIC")
+
+	cEventTopic = fmt.Sprintf("%s.%d", cEventTopic, inventory.AggregateID)
+	cEventQueryTopic = fmt.Sprintf("%s.%d", cEventQueryTopic, inventory.AggregateID)
 
 	kc := &poll.KafkaConfig{
 		EventCons: &kafka.ConsumerConfig{
