@@ -67,7 +67,7 @@ func loadMongoConfig() (*poll.MongoConfig, error) {
 	}
 
 	return &poll.MongoConfig{
-		AggregateID:        aggregateID,
+		AggregateID:        inventory.AggregateID,
 		AggCollection:      aggMongoCollection,
 		Connection:         conn,
 		MetaDatabaseName:   database,

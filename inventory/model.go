@@ -11,6 +11,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// AggregateID is the global AggregateID for Inventory Aggregate.
+const AggregateID int8 = 2
+
 // Inventory defines the Inventory Aggregate.
 type Inventory struct {
 	ID           objectid.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
@@ -25,34 +28,7 @@ type Inventory struct {
 	Name         string            `bson:"name,omitempty" json:"name,omitempty"`
 	Origin       string            `bson:"origin,omitempty" json:"origin,omitempty"`
 	Price        float64           `bson:"price,omitempty" json:"price,omitempty"`
-	Quantity     int64             `bson:"quantity,omitempty" json:"quantity,omitempty"`
 	RSCustomerID uuuid.UUID        `bson:"rsCustomerID,omitempty" json:"rsCustomerID,omitempty"`
-	SalePrice    float64           `bson:"salePrice,omitempty" json:"salePrice,omitempty"`
-	SKU          string            `bson:"sku,omitempty" json:"sku,omitempty"`
-	SoldWeight   float64           `bson:"soldWeight,omitempty" json:"soldWeight,omitempty"`
-	Timestamp    int64             `bson:"timestamp,omitempty" json:"timestamp,omitempty"`
-	TotalWeight  float64           `bson:"totalWeight,omitempty" json:"totalWeight,omitempty"`
-	UPC          int64             `bson:"upc,omitempty" json:"upc,omitempty"`
-	WasteWeight  float64           `bson:"wasteWeight,omitempty" json:"wasteWeight,omitempty"`
-}
-
-// marshalInventory is simplified version of Inventory, for convenience
-// in Marshalling and Unmarshalling operations.
-type marshalInventory struct {
-	ID           objectid.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
-	ItemID       string            `bson:"itemID,omitempty" json:"itemID,omitempty"`
-	Barcode      string            `bson:"barcode,omitempty" json:"barcode,omitempty"`
-	DateArrived  int64             `bson:"dateArrived,omitempty" json:"dateArrived,omitempty"`
-	DateSold     int64             `bson:"dateSold,omitempty" json:"dateSold,omitempty"`
-	DeviceID     string            `bson:"deviceID,omitempty" json:"deviceID,omitempty"`
-	DonateWeight float64           `bson:"donateWeight,omitempty" json:"donateWeight,omitempty"`
-	ExpiryDate   int64             `bson:"expiryDate,omitempty" json:"expiryDate,omitempty"`
-	Lot          string            `bson:"lot,omitempty" json:"lot,omitempty"`
-	Name         string            `bson:"name,omitempty" json:"name,omitempty"`
-	Origin       string            `bson:"origin,omitempty" json:"origin,omitempty"`
-	Price        float64           `bson:"price,omitempty" json:"price,omitempty"`
-	Quantity     int64             `bson:"quantity,omitempty" json:"quantity,omitempty"`
-	RSCustomerID string            `bson:"rsCustomerID,omitempty" json:"rsCustomerID,omitempty"`
 	SalePrice    float64           `bson:"salePrice,omitempty" json:"salePrice,omitempty"`
 	SKU          string            `bson:"sku,omitempty" json:"sku,omitempty"`
 	SoldWeight   float64           `bson:"soldWeight,omitempty" json:"soldWeight,omitempty"`
@@ -64,30 +40,31 @@ type marshalInventory struct {
 
 // MarshalBSON returns bytes of BSON-type.
 func (i Inventory) MarshalBSON() ([]byte, error) {
-	in := &marshalInventory{
-		ID:           i.ID,
-		ItemID:       i.ItemID.String(),
-		Barcode:      i.Barcode,
-		DateArrived:  i.DateArrived,
-		DateSold:     i.DateSold,
-		DeviceID:     i.DeviceID.String(),
-		DonateWeight: i.DonateWeight,
-		ExpiryDate:   i.ExpiryDate,
-		Lot:          i.Lot,
-		Name:         i.Name,
-		Origin:       i.Origin,
-		Price:        i.Price,
-		Quantity:     i.Quantity,
-		RSCustomerID: i.RSCustomerID.String(),
-		SalePrice:    i.SalePrice,
-		SKU:          i.SKU,
-		SoldWeight:   i.SoldWeight,
-		Timestamp:    i.Timestamp,
-		TotalWeight:  i.TotalWeight,
-		UPC:          i.UPC,
-		WasteWeight:  i.WasteWeight,
+	in := map[string]interface{}{
+		"itemID":       i.ItemID.String(),
+		"barcode":      i.Barcode,
+		"dateArrived":  i.DateArrived,
+		"dateSold":     i.DateSold,
+		"deviceID":     i.DeviceID.String(),
+		"donateWeight": i.DonateWeight,
+		"expiryDate":   i.ExpiryDate,
+		"lot":          i.Lot,
+		"name":         i.Name,
+		"origin":       i.Origin,
+		"price":        i.Price,
+		"rsCustomerID": i.RSCustomerID.String(),
+		"salePrice":    i.SalePrice,
+		"sku":          i.SKU,
+		"soldWeight":   i.SoldWeight,
+		"timestamp":    i.Timestamp,
+		"totalWeight":  i.TotalWeight,
+		"upc":          i.UPC,
+		"wasteWeight":  i.WasteWeight,
 	}
 
+	if i.ID != objectid.NilObjectID {
+		in["_id"] = i.ID
+	}
 	return bson.Marshal(in)
 }
 
@@ -105,7 +82,6 @@ func (i *Inventory) MarshalJSON() ([]byte, error) {
 		"name":         i.Name,
 		"origin":       i.Origin,
 		"price":        i.Price,
-		"quantity":     i.Quantity,
 		"rsCustomerID": i.RSCustomerID.String(),
 		"salePrice":    i.SalePrice,
 		"sku":          i.SKU,
@@ -245,13 +221,6 @@ func (i *Inventory) unmarshalFromMap(m map[string]interface{}) error {
 		i.Price, err = util.AssertFloat64(m["price"])
 		if err != nil {
 			err = errors.Wrap(err, "Error while asserting Price")
-			return err
-		}
-	}
-	if m["quantity"] != nil {
-		i.Quantity, err = util.AssertInt64(m["quantity"])
-		if err != nil {
-			err = errors.Wrap(err, "Error while asserting Quantity")
 			return err
 		}
 	}
