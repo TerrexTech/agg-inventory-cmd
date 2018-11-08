@@ -70,6 +70,9 @@ var _ = Describe("InventoryAggregate", func() {
 		kafkaBrokers          []string
 		eventsTopic           string
 		producerResponseTopic string
+		eventRespTopic        string
+
+		producer *kafka.Producer
 
 		mockInv   *inventory.Inventory
 		mockEvent *model.Event
@@ -80,6 +83,13 @@ var _ = Describe("InventoryAggregate", func() {
 		)
 		eventsTopic = os.Getenv("KAFKA_PRODUCER_EVENT_TOPIC")
 		producerResponseTopic = os.Getenv("KAFKA_PRODUCER_RESPONSE_TOPIC")
+		eventRespTopic = os.Getenv("KAFKA_CONSUMER_EVENT_TOPIC")
+
+		var err error
+		producer, err = kafka.NewProducer(&kafka.ProducerConfig{
+			KafkaBrokers: kafkaBrokers,
+		})
+		Expect(err).ToNot(HaveOccurred())
 
 		itemID, err := uuuid.NewV4()
 		Expect(err).ToNot(HaveOccurred())
@@ -90,6 +100,7 @@ var _ = Describe("InventoryAggregate", func() {
 
 		mockInv = &inventory.Inventory{
 			ItemID:       itemID,
+			Barcode:      "test-barcode",
 			DateArrived:  time.Now().Unix(),
 			DeviceID:     deviceID,
 			Lot:          "test-lot",
@@ -111,16 +122,16 @@ var _ = Describe("InventoryAggregate", func() {
 		Expect(err).ToNot(HaveOccurred())
 		uid, err := uuuid.NewV4()
 		Expect(err).ToNot(HaveOccurred())
-		timeUUID, err := uuuid.NewV1()
+		uuid, err := uuuid.NewV4()
 		Expect(err).ToNot(HaveOccurred())
 		mockEvent = &model.Event{
-			Action:        "insert",
+			EventAction:   "insert",
 			CorrelationID: cid,
 			AggregateID:   inventory.AggregateID,
 			Data:          marshalInv,
-			Timestamp:     time.Now(),
+			NanoTime:      time.Now().UnixNano(),
 			UserUUID:      uid,
-			TimeUUID:      timeUUID,
+			UUID:          uuid,
 			Version:       0,
 			YearBucket:    2018,
 		}
@@ -129,13 +140,9 @@ var _ = Describe("InventoryAggregate", func() {
 	Describe("Inventory Operations", func() {
 		It("should insert record", func(done Done) {
 			Byf("Producing MockEvent")
-			p, err := kafka.NewProducer(&kafka.ProducerConfig{
-				KafkaBrokers: kafkaBrokers,
-			})
-			Expect(err).ToNot(HaveOccurred())
 			marshalEvent, err := json.Marshal(mockEvent)
 			Expect(err).ToNot(HaveOccurred())
-			p.Input() <- kafka.CreateMessage(eventsTopic, marshalEvent)
+			producer.Input() <- kafka.CreateMessage(eventsTopic, marshalEvent)
 
 			// Check if MockEvent was processed correctly
 			Byf("Consuming Result")
@@ -150,11 +157,11 @@ var _ = Describe("InventoryAggregate", func() {
 				err := json.Unmarshal(msg.Value, kr)
 				Expect(err).ToNot(HaveOccurred())
 
-				if kr.UUID == mockEvent.TimeUUID {
+				if kr.UUID == mockEvent.UUID {
 					Expect(kr.Error).To(BeEmpty())
 					Expect(kr.ErrorCode).To(BeZero())
 					Expect(kr.CorrelationID).To(Equal(mockEvent.CorrelationID))
-					Expect(kr.UUID).To(Equal(mockEvent.TimeUUID))
+					Expect(kr.UUID).To(Equal(mockEvent.UUID))
 
 					inv := &inventory.Inventory{}
 					err = json.Unmarshal(kr.Result, inv)
@@ -184,6 +191,70 @@ var _ = Describe("InventoryAggregate", func() {
 			close(done)
 		}, 20)
 
+		It("should validate new-sale and update sale-weight", func() {
+			saleID, err := uuuid.NewV4()
+			Expect(err).ToNot(HaveOccurred())
+
+			Byf("Creating mock create-sale Event")
+			m := map[string]interface{}{
+				"items": []map[string]interface{}{
+					map[string]interface{}{
+						"weight":  12.24,
+						"barcode": "test-barcode",
+						"itemID":  mockInv.ItemID,
+						"lot":     "test-lot",
+						"sku":     "test-sku",
+					},
+				},
+				"saleID":    saleID,
+				"timestamp": time.Now().UnixNano(),
+			}
+
+			cid, err := uuuid.NewV4()
+			Expect(err).ToNot(HaveOccurred())
+			uuid, err := uuuid.NewV4()
+			Expect(err).ToNot(HaveOccurred())
+
+			marshalMap, err := json.Marshal(m)
+			Expect(err).ToNot(HaveOccurred())
+			e := model.Event{
+				AggregateID:   2,
+				CorrelationID: cid,
+				EventAction:   "update",
+				ServiceAction: "createSale",
+				Data:          marshalMap,
+				NanoTime:      time.Now().UnixNano(),
+				UUID:          uuid,
+				Version:       0,
+				YearBucket:    2018,
+			}
+			marshalEvent, err := json.Marshal(e)
+			Expect(err).ToNot(HaveOccurred())
+			msg := kafka.CreateMessage(eventsTopic, marshalEvent)
+			Byf("Producing mock create-sale event")
+			producer.Input() <- msg
+
+			consTopic := fmt.Sprintf("%s.%d", eventRespTopic, 3)
+			log.Println(consTopic)
+			consumer, err := kafka.NewConsumer(&kafka.ConsumerConfig{
+				KafkaBrokers: kafkaBrokers,
+				GroupName:    "test-group.1",
+				Topics:       []string{consTopic},
+			})
+
+			msgCallback := func(msg *sarama.ConsumerMessage) bool {
+				defer GinkgoRecover()
+				kr := &model.KafkaResponse{}
+				err := json.Unmarshal(msg.Value, kr)
+				Expect(err).ToNot(HaveOccurred())
+
+				return kr.CorrelationID == cid
+			}
+
+			handler := &msgHandler{msgCallback}
+			consumer.Consume(context.Background(), handler)
+		})
+
 		It("should update record", func(done Done) {
 			Byf("Creating update args")
 			filterInv := map[string]interface{}{
@@ -204,12 +275,12 @@ var _ = Describe("InventoryAggregate", func() {
 			mockInv.ID = mockID
 
 			Byf("Creating update MockEvent")
-			timeUUID, err := uuuid.NewV1()
+			uuid, err := uuuid.NewV4()
 			Expect(err).ToNot(HaveOccurred())
-			mockEvent.Action = "update"
+			mockEvent.EventAction = "update"
 			mockEvent.Data = marshalUpdate
-			mockEvent.Timestamp = time.Now()
-			mockEvent.TimeUUID = timeUUID
+			mockEvent.NanoTime = time.Now().UnixNano()
+			mockEvent.UUID = uuid
 
 			Byf("Producing MockEvent")
 			p, err := kafka.NewProducer(&kafka.ProducerConfig{
@@ -233,11 +304,11 @@ var _ = Describe("InventoryAggregate", func() {
 				err := json.Unmarshal(msg.Value, kr)
 				Expect(err).ToNot(HaveOccurred())
 
-				if kr.UUID == mockEvent.TimeUUID {
+				if kr.UUID == mockEvent.UUID {
 					Expect(kr.Error).To(BeEmpty())
 					Expect(kr.ErrorCode).To(BeZero())
 					Expect(kr.CorrelationID).To(Equal(mockEvent.CorrelationID))
-					Expect(kr.UUID).To(Equal(mockEvent.TimeUUID))
+					Expect(kr.UUID).To(Equal(mockEvent.UUID))
 
 					result := map[string]int{}
 					err = json.Unmarshal(kr.Result, &result)
@@ -276,12 +347,12 @@ var _ = Describe("InventoryAggregate", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			Byf("Creating delete MockEvent")
-			timeUUID, err := uuuid.NewV1()
+			uuid, err := uuuid.NewV4()
 			Expect(err).ToNot(HaveOccurred())
-			mockEvent.Action = "delete"
+			mockEvent.EventAction = "delete"
 			mockEvent.Data = marshalDelete
-			mockEvent.Timestamp = time.Now()
-			mockEvent.TimeUUID = timeUUID
+			mockEvent.NanoTime = time.Now().UnixNano()
+			mockEvent.UUID = uuid
 
 			Byf("Producing MockEvent")
 			p, err := kafka.NewProducer(&kafka.ProducerConfig{
@@ -305,11 +376,11 @@ var _ = Describe("InventoryAggregate", func() {
 				err := json.Unmarshal(msg.Value, kr)
 				Expect(err).ToNot(HaveOccurred())
 
-				if kr.UUID == mockEvent.TimeUUID {
+				if kr.UUID == mockEvent.UUID {
 					Expect(kr.Error).To(BeEmpty())
 					Expect(kr.ErrorCode).To(BeZero())
 					Expect(kr.CorrelationID).To(Equal(mockEvent.CorrelationID))
-					Expect(kr.UUID).To(Equal(mockEvent.TimeUUID))
+					Expect(kr.UUID).To(Equal(mockEvent.UUID))
 
 					result := map[string]int{}
 					err = json.Unmarshal(kr.Result, &result)

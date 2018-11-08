@@ -6,20 +6,16 @@ import (
 
 	"github.com/TerrexTech/go-eventstore-models/model"
 	"github.com/TerrexTech/go-mongoutils/mongo"
+	"github.com/TerrexTech/uuuid"
 	"github.com/pkg/errors"
 )
 
-type deleteResult struct {
-	DeletedCount int64 `json:"deletedCount,omitempty"`
-}
+func updateInventory(collection *mongo.Collection, event *model.Event) *model.KafkaResponse {
+	invUpdate := &inventoryUpdate{}
 
-// Delete handles "delete" events.
-func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaResponse {
-	filter := map[string]interface{}{}
-
-	err := json.Unmarshal(event.Data, &filter)
+	err := json.Unmarshal(event.Data, invUpdate)
 	if err != nil {
-		err = errors.Wrap(err, "Delete: Error while unmarshalling Event-data")
+		err = errors.Wrap(err, "Update: Error while unmarshalling Event-data")
 		log.Println(err)
 		return &model.KafkaResponse{
 			AggregateID:   event.AggregateID,
@@ -32,9 +28,37 @@ func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 		}
 	}
 
-	if len(filter) == 0 {
+	if len(invUpdate.Filter) == 0 {
 		err = errors.New("blank filter provided")
-		err = errors.Wrap(err, "Delete")
+		err = errors.Wrap(err, "Update")
+		log.Println(err)
+		return &model.KafkaResponse{
+			AggregateID:   event.AggregateID,
+			CorrelationID: event.CorrelationID,
+			Error:         err.Error(),
+			ErrorCode:     InternalError,
+			EventAction:   event.EventAction,
+			ServiceAction: event.ServiceAction,
+			UUID:          event.UUID,
+		}
+	}
+	if len(invUpdate.Update) == 0 {
+		err = errors.New("blank update provided")
+		err = errors.Wrap(err, "Update")
+		log.Println(err)
+		return &model.KafkaResponse{
+			AggregateID:   event.AggregateID,
+			CorrelationID: event.CorrelationID,
+			Error:         err.Error(),
+			ErrorCode:     InternalError,
+			EventAction:   event.EventAction,
+			ServiceAction: event.ServiceAction,
+			UUID:          event.UUID,
+		}
+	}
+	if invUpdate.Update["itemID"] == (uuuid.UUID{}).String() {
+		err = errors.New("found blank itemID in update")
+		err = errors.Wrap(err, "Update")
 		log.Println(err)
 		return &model.KafkaResponse{
 			AggregateID:   event.AggregateID,
@@ -47,9 +71,9 @@ func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 		}
 	}
 
-	deleteStats, err := collection.DeleteMany(filter)
+	updateStats, err := collection.UpdateMany(invUpdate.Filter, invUpdate.Update)
 	if err != nil {
-		err = errors.Wrap(err, "Delete: Error in DeleteMany")
+		err = errors.Wrap(err, "Update: Error in UpdateMany")
 		log.Println(err)
 		return &model.KafkaResponse{
 			AggregateID:   event.AggregateID,
@@ -62,10 +86,13 @@ func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 		}
 	}
 
-	result := &deleteResult{deleteStats.DeletedCount}
+	result := &updateResult{
+		MatchedCount:  updateStats.MatchedCount,
+		ModifiedCount: updateStats.ModifiedCount,
+	}
 	resultMarshal, err := json.Marshal(result)
 	if err != nil {
-		err = errors.Wrap(err, "Delete: Error marshalling Inventory Delete-result")
+		err = errors.Wrap(err, "Update: Error marshalling Inventory Update-result")
 		log.Println(err)
 		return &model.KafkaResponse{
 			AggregateID:   event.AggregateID,
@@ -81,8 +108,8 @@ func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 	return &model.KafkaResponse{
 		AggregateID:   event.AggregateID,
 		CorrelationID: event.CorrelationID,
-		EventAction:   event.EventAction,
 		Result:        resultMarshal,
+		EventAction:   event.EventAction,
 		ServiceAction: event.ServiceAction,
 		UUID:          event.UUID,
 	}
