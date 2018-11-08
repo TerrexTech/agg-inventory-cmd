@@ -39,12 +39,12 @@ services:
       - 2181:2181
 
   go-eventpersistence:
-    image: terrextech/go-eventpersistence:v2.0.1
+    image: terrextech/go-eventpersistence:v3.0.0
     env_file:
       - ./.envp
 
   go-eventstore-query:
-    image: terrextech/go-eventstore-query:v2.1.0
+    image: terrextech/go-eventstore-query:v3.0.0
     env_file:
       - ./.envq
 
