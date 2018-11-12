@@ -18,12 +18,10 @@ const AggregateID int8 = 2
 type Inventory struct {
 	ID           objectid.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
 	ItemID       uuuid.UUID        `bson:"itemID,omitempty" json:"itemID,omitempty"`
-	Barcode      string            `bson:"barcode,omitempty" json:"barcode,omitempty"`
 	DateArrived  int64             `bson:"dateArrived,omitempty" json:"dateArrived,omitempty"`
 	DateSold     int64             `bson:"dateSold,omitempty" json:"dateSold,omitempty"`
 	DeviceID     uuuid.UUID        `bson:"deviceID,omitempty" json:"deviceID,omitempty"`
 	DonateWeight float64           `bson:"donateWeight,omitempty" json:"donateWeight,omitempty"`
-	ExpiryDate   int64             `bson:"expiryDate,omitempty" json:"expiryDate,omitempty"`
 	Lot          string            `bson:"lot,omitempty" json:"lot,omitempty"`
 	Name         string            `bson:"name,omitempty" json:"name,omitempty"`
 	Origin       string            `bson:"origin,omitempty" json:"origin,omitempty"`
@@ -42,12 +40,10 @@ type Inventory struct {
 func (i Inventory) MarshalBSON() ([]byte, error) {
 	in := map[string]interface{}{
 		"itemID":       i.ItemID.String(),
-		"barcode":      i.Barcode,
 		"dateArrived":  i.DateArrived,
 		"dateSold":     i.DateSold,
 		"deviceID":     i.DeviceID.String(),
 		"donateWeight": i.DonateWeight,
-		"expiryDate":   i.ExpiryDate,
 		"lot":          i.Lot,
 		"name":         i.Name,
 		"origin":       i.Origin,
@@ -72,12 +68,10 @@ func (i Inventory) MarshalBSON() ([]byte, error) {
 func (i *Inventory) MarshalJSON() ([]byte, error) {
 	in := map[string]interface{}{
 		"itemID":       i.ItemID.String(),
-		"barcode":      i.Barcode,
 		"dateArrived":  i.DateArrived,
 		"dateSold":     i.DateSold,
 		"deviceID":     i.DeviceID.String(),
 		"donateWeight": i.DonateWeight,
-		"expiryDate":   i.ExpiryDate,
 		"lot":          i.Lot,
 		"name":         i.Name,
 		"origin":       i.Origin,
@@ -165,12 +159,6 @@ func (i *Inventory) unmarshalFromMap(m map[string]interface{}) error {
 		}
 	}
 
-	if m["barcode"] != nil {
-		i.Barcode, assertOK = m["barcode"].(string)
-		if !assertOK {
-			return errors.New("Error while asserting Barcode")
-		}
-	}
 	if m["dateArrived"] != nil {
 		i.DateArrived, err = util.AssertInt64(m["dateArrived"])
 		if err != nil {
@@ -189,13 +177,6 @@ func (i *Inventory) unmarshalFromMap(m map[string]interface{}) error {
 		i.DonateWeight, err = util.AssertFloat64(m["donateWeight"])
 		if err != nil {
 			err = errors.Wrap(err, "Error while asserting DonateWeight")
-			return err
-		}
-	}
-	if m["expiryDate"] != nil {
-		i.ExpiryDate, err = util.AssertInt64(m["expiryDate"])
-		if err != nil {
-			err = errors.Wrap(err, "Error while asserting ExpiryDate")
 			return err
 		}
 	}

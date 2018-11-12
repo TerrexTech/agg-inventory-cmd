@@ -100,7 +100,6 @@ var _ = Describe("InventoryAggregate", func() {
 
 		mockInv = &inventory.Inventory{
 			ItemID:       itemID,
-			Barcode:      "test-barcode",
 			DateArrived:  time.Now().Unix(),
 			DeviceID:     deviceID,
 			Lot:          "test-lot",
@@ -261,7 +260,7 @@ var _ = Describe("InventoryAggregate", func() {
 				"itemID": mockInv.ItemID,
 			}
 			mockInv.Origin = "new-origin"
-			mockInv.ExpiryDate = time.Now().Unix()
+			mockInv.Price = 500
 			// Remove ObjectID because this is not passed from gateway
 			mockID := mockInv.ID
 			mockInv.ID = objectid.NilObjectID
