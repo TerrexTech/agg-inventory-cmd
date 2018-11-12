@@ -29,12 +29,12 @@
   version = "v4.0.0"
 
 [[projects]]
-  digest = "1:4d3876e2ce747cfeded59a1210056e894d2593b73e843454a19d7f845afad23e"
+  digest = "1:0cc3c49e3d25739ff9b5cbab32eb5e63f4d2ea3c9b3262b02f45c081d6fc1eeb"
   name = "github.com/TerrexTech/go-eventstore-models"
   packages = ["model"]
   pruneopts = "UT"
-  revision = "4d0913b6357bca72d45064058f63c02d20c9e2c0"
-  version = "v4.0.0"
+  revision = "9b039f75d51b77ce510458f42038b5b29fa57936"
+  version = "v4.1.0"
 
 [[projects]]
   digest = "1:017b08c994a864ea4e94f1837037c14087f784a1e99d54173eba9050f7a81f74"
@@ -110,7 +110,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:348bbd07b4a983b2f811f81948c78142de09bb9fcf25284bee5e2ab3bdd0f6f9"
+  digest = "1:7173cfc9eec4c3f4b1f9260e60cd2f73a8f9b49739d00647f71a1eb14c498939"
   name = "github.com/gocql/gocql"
   packages = [
     ".",
@@ -119,7 +119,7 @@
     "internal/streams",
   ]
   pruneopts = "UT"
-  revision = "68ae1e384be4d7cd7df0f5b77f331759d806308e"
+  revision = "9de8c0414fd7ff72ee819f25a66e4942cb223873"
 
 [[projects]]
   digest = "1:c594a691090b434d55c67f6cc8e326ef5ba49452abc059821bd5d4fd4cdef08c"
@@ -328,27 +328,26 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:6d5ed712653ea5321fe3e3475ab2188cf362a4e0d31e9fd3acbd4dfbbca0d680"
+  digest = "1:5193d913046443e59093d66a97a40c51f4a5ea4ceba60f3b3ecf89694de5d16f"
   name = "golang.org/x/net"
   packages = [
-    "context",
     "html",
     "html/atom",
     "html/charset",
   ]
   pruneopts = "UT"
-  revision = "a544f70c90f196e50d198126db0c4cb2b562fec0"
+  revision = "03003ca0c849e57b6ea29a4bab8d3cb6e4d568fe"
 
 [[projects]]
   branch = "master"
-  digest = "1:c313aef534e493304f3666fbd24dca5932ebf776a82b7a40f961c9355794a1b1"
+  digest = "1:d6b0cfc5ae30841c4b116ac589629f56f8add0955a39f11d8c0d06ca67f5b3d5"
   name = "golang.org/x/sync"
   packages = [
     "errgroup",
     "semaphore",
   ]
   pruneopts = "UT"
-  revision = "1d60e4601c6fd243af51cc01ddf169918a5407ca"
+  revision = "42b317875d0fa942474b76e1b46a6060d720ae6e"
 
 [[projects]]
   branch = "master"
