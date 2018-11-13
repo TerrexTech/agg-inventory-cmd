@@ -44,6 +44,8 @@ do
   sleep 1
 done
 
+docker-compose up -d --build --force-recreate etcd
+
 docker-compose up -d --build --force-recreate go-eventpersistence
 echo "Waiting for go-eventpersistence to initialize"
 sleep 5

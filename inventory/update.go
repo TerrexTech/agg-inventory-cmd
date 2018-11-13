@@ -3,6 +3,7 @@ package inventory
 import (
 	"github.com/TerrexTech/go-eventstore-models/model"
 	"github.com/TerrexTech/go-mongoutils/mongo"
+	"github.com/coreos/etcd/clientv3"
 )
 
 type inventoryUpdate struct {
@@ -16,10 +17,14 @@ type updateResult struct {
 }
 
 // Update handles "update" events.
-func Update(collection *mongo.Collection, event *model.Event) *model.KafkaResponse {
+func Update(
+	etcd *clientv3.Client,
+	collection *mongo.Collection,
+	event *model.Event,
+) *model.KafkaResponse {
 	switch event.ServiceAction {
 	case "createSale":
-		return createSale(collection, event)
+		return createSale(etcd, collection, event)
 	default:
 		return updateInventory(collection, event)
 	}

@@ -111,7 +111,7 @@ var _ = Describe("InventoryAggregate", func() {
 			SKU:          "test-sku",
 			Timestamp:    time.Now().Unix(),
 			TotalWeight:  300,
-			UPC:          123456789012,
+			UPC:          "test-upc",
 			WasteWeight:  12,
 		}
 		marshalInv, err := json.Marshal(mockInv)
@@ -187,6 +187,7 @@ var _ = Describe("InventoryAggregate", func() {
 			Expect(assertOK).To(BeTrue())
 			Expect(findInv).To(Equal(mockInv))
 
+			// log.Fatalln("")
 			close(done)
 		}, 20)
 
@@ -198,11 +199,11 @@ var _ = Describe("InventoryAggregate", func() {
 			m := map[string]interface{}{
 				"items": []map[string]interface{}{
 					map[string]interface{}{
-						"weight":  12.24,
-						"barcode": "test-barcode",
-						"itemID":  mockInv.ItemID,
-						"lot":     "test-lot",
-						"sku":     "test-sku",
+						"weight": 12.24,
+						"upc":    "test-upc",
+						"itemID": mockInv.ItemID,
+						"lot":    "test-lot",
+						"sku":    "test-sku",
 					},
 				},
 				"saleID":    saleID,
@@ -233,21 +234,31 @@ var _ = Describe("InventoryAggregate", func() {
 			Byf("Producing mock create-sale event")
 			producer.Input() <- msg
 
-			consTopic := fmt.Sprintf("%s.%d", eventRespTopic, 3)
-			log.Println(consTopic)
+			consTopic := fmt.Sprintf("%s", eventsTopic)
 			consumer, err := kafka.NewConsumer(&kafka.ConsumerConfig{
 				KafkaBrokers: kafkaBrokers,
 				GroupName:    "test-group.1",
 				Topics:       []string{consTopic},
 			})
+			var _ = eventRespTopic
 
 			msgCallback := func(msg *sarama.ConsumerMessage) bool {
 				defer GinkgoRecover()
-				kr := &model.KafkaResponse{}
-				err := json.Unmarshal(msg.Value, kr)
+				event := &model.Event{}
+				err := json.Unmarshal(msg.Value, event)
 				Expect(err).ToNot(HaveOccurred())
 
-				return kr.CorrelationID == cid
+				if event.AggregateID == 3 && event.CorrelationID == cid {
+					validationResp := &inventory.SaleValidationResp{}
+					err = json.Unmarshal(event.Data, validationResp)
+					Expect(err).ToNot(HaveOccurred())
+					respItemID := validationResp.Result[0].ItemID
+					Expect(respItemID).To(Equal(mockInv.ItemID))
+
+					Expect(validationResp.Result[0].Error).To(BeEmpty())
+					return true
+				}
+				return false
 			}
 
 			handler := &msgHandler{msgCallback}

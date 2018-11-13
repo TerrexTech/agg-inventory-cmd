@@ -1,10 +1,14 @@
 package inventory
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
 	"time"
+
+	"github.com/coreos/etcd/clientv3"
 
 	"github.com/TerrexTech/go-kafkautils/kafka"
 
@@ -12,10 +16,11 @@ import (
 	"github.com/TerrexTech/go-eventstore-models/model"
 	"github.com/TerrexTech/go-mongoutils/mongo"
 	"github.com/TerrexTech/uuuid"
+	"github.com/coreos/etcd/clientv3/concurrency"
 	"github.com/pkg/errors"
 )
 
-type saleItemResult struct {
+type SaleItemResult struct {
 	ItemID          uuuid.UUID `json:"itemID,omitempty"`
 	Error           string     `json:"error,omitempty"`
 	ErrorCode       int        `json:"errorCode,omitempty"`
@@ -23,14 +28,18 @@ type saleItemResult struct {
 	TotalWeight     float64    `json:"totalWeight,omitempty"`
 }
 
-type saleValidationResp struct {
+type SaleValidationResp struct {
 	OriginalRequest map[string]interface{} `json:"originalRequest,omitempty"`
-	Result          []saleItemResult       `json:"result,omitempty"`
+	Result          []SaleItemResult       `json:"result,omitempty"`
 }
 
 var producer *kafka.Producer
 
-func createSale(collection *mongo.Collection, event *model.Event) *model.KafkaResponse {
+func createSale(
+	etcd *clientv3.Client,
+	collection *mongo.Collection,
+	event *model.Event,
+) *model.KafkaResponse {
 	m := map[string]interface{}{}
 	err := json.Unmarshal(event.Data, &m)
 	if err != nil {
@@ -75,9 +84,9 @@ func createSale(collection *mongo.Collection, event *model.Event) *model.KafkaRe
 		}
 	}
 
-	result := validateSaleItems(collection, items)
+	result := validateSaleItems(etcd, collection, items)
 
-	marshalResult, err := json.Marshal(saleValidationResp{
+	marshalResult, err := json.Marshal(SaleValidationResp{
 		OriginalRequest: m,
 		Result:          result,
 	})
@@ -143,10 +152,11 @@ func createSale(collection *mongo.Collection, event *model.Event) *model.KafkaRe
 }
 
 func validateSaleItems(
+	etcd *clientv3.Client,
 	collection *mongo.Collection,
 	items []interface{},
-) []saleItemResult {
-	result := []saleItemResult{}
+) []SaleItemResult {
+	result := []SaleItemResult{}
 
 	for _, item := range items {
 		itemMap, assertOK := item.(map[string]interface{})
@@ -154,7 +164,7 @@ func validateSaleItems(
 			err := errors.New("error asserting Item to Map")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				Error:     err.Error(),
 				ErrorCode: InternalError,
 			})
@@ -164,7 +174,7 @@ func validateSaleItems(
 			err := errors.New("missing ItemID")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				Error:     err.Error(),
 				ErrorCode: UserError,
 			})
@@ -176,7 +186,7 @@ func validateSaleItems(
 			err := errors.New("error asserting ItemID to string")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				Error:     err.Error(),
 				ErrorCode: UserError,
 			})
@@ -186,7 +196,7 @@ func validateSaleItems(
 			err := errors.New("error parsing ItemID")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				Error:     err.Error(),
 				ErrorCode: InternalError,
 			})
@@ -196,7 +206,7 @@ func validateSaleItems(
 			err := errors.New("missing weight")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				ItemID:    itemID,
 				Error:     err.Error(),
 				ErrorCode: UserError,
@@ -210,7 +220,7 @@ func validateSaleItems(
 			err := errors.New("error asserting sold-item weight")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				ItemID:    itemID,
 				Error:     err.Error(),
 				ErrorCode: UserError,
@@ -220,11 +230,54 @@ func validateSaleItems(
 
 		// So it can match document in Mongo
 		delete(itemMap, "weight")
+
+		lockTTL := concurrency.WithTTL(25)
+		lockSession, err := concurrency.NewSession(etcd, lockTTL)
+		if err != nil {
+			err = errors.Wrapf(
+				err,
+				"SaleCreatedEvent: Failed to obtain lock for Updating ItemID: %s",
+				itemIDStr,
+			)
+			log.Println(err)
+			result = append(result, SaleItemResult{
+				ItemID:    itemID,
+				Error:     err.Error(),
+				ErrorCode: InternalError,
+			})
+			continue
+		}
+		defer lockSession.Close()
+		prefix := fmt.Sprintf("/%s/", itemIDStr)
+		mx := concurrency.NewMutex(lockSession, prefix)
+
+		lockCtx, lockCancel := context.WithTimeout(context.Background(), 25*time.Second)
+		defer lockCancel()
+		err = mx.Lock(lockCtx)
+
+		unlockCtx, unlockCancel := context.WithTimeout(context.Background(), 25*time.Second)
+		defer unlockCancel()
+		defer mx.Unlock(unlockCtx)
+		if err != nil {
+			err = errors.Wrapf(
+				err,
+				"SaleCreatedEvent: Failed to apply obtained lock for ItemID: %s",
+				itemIDStr,
+			)
+			log.Println(err)
+			result = append(result, SaleItemResult{
+				ItemID:    itemID,
+				Error:     err.Error(),
+				ErrorCode: InternalError,
+			})
+			lockSession.Close()
+			continue
+		}
 		findResult, err := collection.FindOne(itemMap)
 		if err != nil {
 			err := errors.Wrap(err, "SaleCreated-Event: Error getting Item from database")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				ItemID:    itemID,
 				Error:     err.Error(),
 				ErrorCode: DatabaseError,
@@ -237,7 +290,7 @@ func validateSaleItems(
 			err := errors.New("error asserting database-result to Inventory-Item")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				ItemID:    itemID,
 				Error:     err.Error(),
 				ErrorCode: InternalError,
@@ -251,7 +304,7 @@ func validateSaleItems(
 			err := errors.New("sale-weight exceeds the total available weight")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				ItemID:    itemID,
 				Error:     err.Error(),
 				ErrorCode: InternalError,
@@ -266,12 +319,28 @@ func validateSaleItems(
 		if err != nil {
 			err = errors.Wrap(err, "SaleCreated-Event: Error writing new weight to database")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				ItemID:    itemID,
 				Error:     err.Error(),
 				ErrorCode: DatabaseError,
 			})
 			continue
+		}
+		err = mx.Unlock(context.Background())
+		if err != nil {
+			err = errors.Wrapf(
+				err,
+				"SaleCreatedEvent: Failed to unlock ItemID: %s", itemIDStr,
+			)
+			log.Println(err)
+		}
+		err = lockSession.Close()
+		if err != nil {
+			err = errors.Wrapf(
+				err,
+				"SaleCreatedEvent: Failed to close lock-session for ItemID: %s", itemIDStr,
+			)
+			log.Println(err)
 		}
 		itemMap["weight"] = soldWeight
 
@@ -279,7 +348,7 @@ func validateSaleItems(
 			err = errors.New("no items updated")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				ItemID:    itemID,
 				Error:     err.Error(),
 				ErrorCode: UserError,
@@ -290,7 +359,7 @@ func validateSaleItems(
 			err = errors.New("no items matched")
 			err = errors.Wrap(err, "SaleCreated-Event")
 			log.Println(err)
-			result = append(result, saleItemResult{
+			result = append(result, SaleItemResult{
 				ItemID:    itemID,
 				Error:     err.Error(),
 				ErrorCode: UserError,
@@ -298,7 +367,7 @@ func validateSaleItems(
 			continue
 		}
 
-		result = append(result, saleItemResult{
+		result = append(result, SaleItemResult{
 			ItemID:          itemID,
 			TotalSoldWeight: totalSoldWeight,
 			TotalWeight:     inv.TotalWeight,
