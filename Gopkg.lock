@@ -69,6 +69,22 @@
   revision = "52c6e1462ebdfb4f59765ca13bd8fa1c31b1d7eb"
 
 [[projects]]
+  digest = "1:3d83417138fb53f2caec13eb0cd5d0226a9da81fcbb078a51555b52ccae327f8"
+  name = "github.com/coreos/etcd"
+  packages = [
+    "auth/authpb",
+    "clientv3",
+    "clientv3/concurrency",
+    "etcdserver/api/v3rpc/rpctypes",
+    "etcdserver/etcdserverpb",
+    "mvcc/mvccpb",
+    "pkg/types",
+  ]
+  pruneopts = "UT"
+  revision = "27fc7e2296f506182f58ce846e48f36b34fe6842"
+  version = "v3.3.10"
+
+[[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
   name = "github.com/davecgh/go-spew"
   packages = ["spew"]
@@ -128,6 +144,32 @@
   pruneopts = "UT"
   revision = "7077aa61129615a0d7f45c49101cd011ab221c27"
   version = "v3.1.2"
+
+[[projects]]
+  digest = "1:bfc758d5a03d57d97226fac6934551c01bd76612adb119c177395b057a0a46db"
+  name = "github.com/gogo/protobuf"
+  packages = [
+    "gogoproto",
+    "proto",
+    "protoc-gen-gogo/descriptor",
+  ]
+  pruneopts = "UT"
+  revision = "636bf0302bc95575d69441b25a2603156ffdddf1"
+  version = "v1.1.1"
+
+[[projects]]
+  digest = "1:4c0989ca0bcd10799064318923b9bc2db6b4d6338dd75f3f2d86c3511aaaf5cf"
+  name = "github.com/golang/protobuf"
+  packages = [
+    "proto",
+    "ptypes",
+    "ptypes/any",
+    "ptypes/duration",
+    "ptypes/timestamp",
+  ]
+  pruneopts = "UT"
+  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
+  version = "v1.2.0"
 
 [[projects]]
   branch = "master"
@@ -328,12 +370,19 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5193d913046443e59093d66a97a40c51f4a5ea4ceba60f3b3ecf89694de5d16f"
+  digest = "1:8e4cc636d70e1402963972d4bf761ce6f4a432e74a537917b3198ec026ebc98c"
   name = "golang.org/x/net"
   packages = [
+    "context",
     "html",
     "html/atom",
     "html/charset",
+    "http/httpguts",
+    "http2",
+    "http2/hpack",
+    "idna",
+    "internal/timeseries",
+    "trace",
   ]
   pruneopts = "UT"
   revision = "03003ca0c849e57b6ea29a4bab8d3cb6e4d568fe"
@@ -358,9 +407,11 @@
   revision = "66b7b1311ac80bbafcd2daeef9a5e6e2cd1e2399"
 
 [[projects]]
-  digest = "1:4392fcf42d5cf0e3ff78c96b2acf8223d49e4fdc53eb77c99d2f8dfe4680e006"
+  digest = "1:436b24586f8fee329e0dd65fd67c817681420cda1d7f934345c13fe78c212a73"
   name = "golang.org/x/text"
   packages = [
+    "collate",
+    "collate/build",
     "encoding",
     "encoding/charmap",
     "encoding/htmlindex",
@@ -371,6 +422,7 @@
     "encoding/simplifiedchinese",
     "encoding/traditionalchinese",
     "encoding/unicode",
+    "internal/colltab",
     "internal/gen",
     "internal/tag",
     "internal/triegen",
@@ -378,13 +430,60 @@
     "internal/utf8internal",
     "language",
     "runes",
+    "secure/bidirule",
     "transform",
+    "unicode/bidi",
     "unicode/cldr",
     "unicode/norm",
+    "unicode/rangetable",
   ]
   pruneopts = "UT"
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
+
+[[projects]]
+  branch = "master"
+  digest = "1:56b0bca90b7e5d1facf5fbdacba23e4e0ce069d25381b8e2f70ef1e7ebfb9c1a"
+  name = "google.golang.org/genproto"
+  packages = ["googleapis/rpc/status"]
+  pruneopts = "UT"
+  revision = "b5d43981345bdb2c233eb4bf3277847b48c6fdc6"
+
+[[projects]]
+  digest = "1:bf7e2328a58176b7f29f3b425b0555745e9a18ed803f5fd8f6c2c13913a60bb4"
+  name = "google.golang.org/grpc"
+  packages = [
+    ".",
+    "balancer",
+    "balancer/base",
+    "balancer/roundrobin",
+    "codes",
+    "connectivity",
+    "credentials",
+    "encoding",
+    "encoding/proto",
+    "grpclog",
+    "health/grpc_health_v1",
+    "internal",
+    "internal/backoff",
+    "internal/channelz",
+    "internal/envconfig",
+    "internal/grpcrand",
+    "internal/transport",
+    "keepalive",
+    "metadata",
+    "naming",
+    "peer",
+    "resolver",
+    "resolver/dns",
+    "resolver/passthrough",
+    "stats",
+    "status",
+    "tap",
+  ]
+  pruneopts = "UT"
+  revision = "2e463a05d100327ca47ac218281906921038fd95"
+  version = "v1.16.0"
 
 [[projects]]
   digest = "1:abeb38ade3f32a92943e5be54f55ed6d6e3b6602761d74b4aab4c9dd45c18abd"
@@ -430,6 +529,8 @@
     "github.com/TerrexTech/go-kafkautils/kafka",
     "github.com/TerrexTech/go-mongoutils/mongo",
     "github.com/TerrexTech/uuuid",
+    "github.com/coreos/etcd/clientv3",
+    "github.com/coreos/etcd/clientv3/concurrency",
     "github.com/joho/godotenv",
     "github.com/mongodb/mongo-go-driver/bson",
     "github.com/mongodb/mongo-go-driver/bson/objectid",

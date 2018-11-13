@@ -32,7 +32,7 @@ type Inventory struct {
 	SoldWeight   float64           `bson:"soldWeight,omitempty" json:"soldWeight,omitempty"`
 	Timestamp    int64             `bson:"timestamp,omitempty" json:"timestamp,omitempty"`
 	TotalWeight  float64           `bson:"totalWeight,omitempty" json:"totalWeight,omitempty"`
-	UPC          int64             `bson:"upc,omitempty" json:"upc,omitempty"`
+	UPC          string            `bson:"upc,omitempty" json:"upc,omitempty"`
 	WasteWeight  float64           `bson:"wasteWeight,omitempty" json:"wasteWeight,omitempty"`
 }
 
@@ -240,10 +240,9 @@ func (i *Inventory) unmarshalFromMap(m map[string]interface{}) error {
 		}
 	}
 	if m["upc"] != nil {
-		i.UPC, err = util.AssertInt64(m["upc"])
-		if err != nil {
-			err = errors.Wrap(err, "Error while asserting UPC")
-			return err
+		i.UPC, assertOK = m["upc"].(string)
+		if !assertOK {
+			return errors.New("Error while asserting UPC")
 		}
 	}
 	if m["wasteWeight"] != nil {
