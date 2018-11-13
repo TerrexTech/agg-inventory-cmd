@@ -59,5 +59,9 @@ sleep 5
 
 docker ps -a
 
-docker-compose up --build --force-recreate agg-inventory-cmd-test
-exit $?
+docker-compose up --exit-code-from agg-inventory-cmd-test
+rc=$?
+if [[ $rc != 0 ]]
+  docker ps -a
+  then exit $rc
+fi
