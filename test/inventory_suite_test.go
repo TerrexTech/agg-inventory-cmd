@@ -188,7 +188,6 @@ var _ = Describe("InventoryAggregate", func() {
 			Expect(assertOK).To(BeTrue())
 			Expect(findInv).To(Equal(mockInv))
 
-			log.Fatalln("")
 			close(done)
 		}, 20)
 
