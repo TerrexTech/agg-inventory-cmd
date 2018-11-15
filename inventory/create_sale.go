@@ -53,7 +53,7 @@ func createSale(
 			Error:         err.Error(),
 			ErrorCode:     InternalError,
 			EventAction:   "insert",
-			ServiceAction: "saleValidated",
+			ServiceAction: event.ServiceAction,
 			UUID:          event.UUID,
 		}
 	}
@@ -65,7 +65,7 @@ func createSale(
 			Error:         err.Error(),
 			ErrorCode:     UserError,
 			EventAction:   "insert",
-			ServiceAction: "saleValidated",
+			ServiceAction: event.ServiceAction,
 			UUID:          event.UUID,
 		}
 	}
@@ -81,12 +81,12 @@ func createSale(
 			Error:         err.Error(),
 			ErrorCode:     InternalError,
 			EventAction:   "insert",
-			ServiceAction: "saleValidated",
+			ServiceAction: event.ServiceAction,
 			UUID:          event.UUID,
 		}
 	}
 
-	result := validateSaleItems(etcd, collection, items)
+	result := validateSaleItems(etcd, collection, event, items)
 
 	marshalResult, err := json.Marshal(SaleValidationResp{
 		OriginalRequest: m,
@@ -101,7 +101,7 @@ func createSale(
 			Error:         err.Error(),
 			ErrorCode:     InternalError,
 			EventAction:   "insert",
-			ServiceAction: "saleValidated",
+			ServiceAction: event.ServiceAction,
 			UUID:          event.UUID,
 		}
 	}
@@ -131,7 +131,7 @@ func createSale(
 		Data:          marshalResult,
 		EventAction:   "insert",
 		NanoTime:      time.Now().UnixNano(),
-		ServiceAction: "saleValidated",
+		ServiceAction: event.ServiceAction,
 		UUID:          uuid,
 		YearBucket:    2018,
 	})
@@ -148,7 +148,7 @@ func createSale(
 		CorrelationID: event.CorrelationID,
 		EventAction:   "insert",
 		Result:        marshalResult,
-		ServiceAction: "saleValidated",
+		ServiceAction: event.ServiceAction,
 		UUID:          event.UUID,
 	}
 }
@@ -156,6 +156,7 @@ func createSale(
 func validateSaleItems(
 	etcd *clientv3.Client,
 	collection *mongo.Collection,
+	event *model.Event,
 	items []interface{},
 ) []SaleItemResult {
 	result := []SaleItemResult{}
@@ -303,23 +304,32 @@ func validateSaleItems(
 			continue
 		}
 
-		// Temporary fix for duplicated message-issue
-		totalSoldWeight := inv.SoldWeight + (soldWeight / 2)
-		cumWeight := totalSoldWeight + inv.WasteWeight + inv.DonateWeight
-		if cumWeight > inv.TotalWeight {
-			err := errors.New("sale-weight exceeds the total available weight")
-			err = errors.Wrap(err, "SaleCreated-Event")
-			log.Println(err)
-			result = append(result, SaleItemResult{
-				ItemID:    itemID,
-				Error:     err.Error(),
-				ErrorCode: InternalError,
-			})
-			continue
-		}
-
-		updateArgs := map[string]interface{}{
-			"soldWeight": totalSoldWeight,
+		var totalSoldWeight float64
+		updateArgs := map[string]interface{}{}
+		if event.ServiceAction == "createFlashSale" {
+			totalSoldWeight = inv.FlashSaleWeight + (soldWeight / 2)
+			updateArgs["onFlashSale"] = true
+			updateArgs["flashSaleWeight"] = totalSoldWeight
+			log.Println("*****************")
+			log.Printf("%+v", updateArgs)
+		} else {
+			// Temporary fix for duplicated message-issue
+			totalSoldWeight = inv.SoldWeight + (soldWeight / 2)
+			cumWeight := totalSoldWeight + inv.WasteWeight + inv.DonateWeight
+			if cumWeight > inv.TotalWeight {
+				err := errors.New("sale-weight exceeds the total available weight")
+				err = errors.Wrap(err, "SaleCreated-Event")
+				log.Println(err)
+				result = append(result, SaleItemResult{
+					ItemID:    itemID,
+					Error:     err.Error(),
+					ErrorCode: InternalError,
+				})
+				continue
+			}
+			updateArgs = map[string]interface{}{
+				"soldWeight": totalSoldWeight,
+			}
 		}
 		updateResult, err := collection.UpdateMany(findArgs, updateArgs)
 		if err != nil {

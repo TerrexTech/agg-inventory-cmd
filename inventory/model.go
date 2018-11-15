@@ -16,46 +16,48 @@ const AggregateID int8 = 2
 
 // Inventory defines the Inventory Aggregate.
 type Inventory struct {
-	ID           objectid.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
-	ItemID       uuuid.UUID        `bson:"itemID,omitempty" json:"itemID,omitempty"`
-	DateArrived  int64             `bson:"dateArrived,omitempty" json:"dateArrived,omitempty"`
-	DateSold     int64             `bson:"dateSold,omitempty" json:"dateSold,omitempty"`
-	DeviceID     uuuid.UUID        `bson:"deviceID,omitempty" json:"deviceID,omitempty"`
-	DonateWeight float64           `bson:"donateWeight,omitempty" json:"donateWeight,omitempty"`
-	Lot          string            `bson:"lot,omitempty" json:"lot,omitempty"`
-	Name         string            `bson:"name,omitempty" json:"name,omitempty"`
-	Origin       string            `bson:"origin,omitempty" json:"origin,omitempty"`
-	Price        float64           `bson:"price,omitempty" json:"price,omitempty"`
-	RSCustomerID uuuid.UUID        `bson:"rsCustomerID,omitempty" json:"rsCustomerID,omitempty"`
-	SalePrice    float64           `bson:"salePrice,omitempty" json:"salePrice,omitempty"`
-	SKU          string            `bson:"sku,omitempty" json:"sku,omitempty"`
-	SoldWeight   float64           `bson:"soldWeight,omitempty" json:"soldWeight,omitempty"`
-	Timestamp    int64             `bson:"timestamp,omitempty" json:"timestamp,omitempty"`
-	TotalWeight  float64           `bson:"totalWeight,omitempty" json:"totalWeight,omitempty"`
-	UPC          string            `bson:"upc,omitempty" json:"upc,omitempty"`
-	WasteWeight  float64           `bson:"wasteWeight,omitempty" json:"wasteWeight,omitempty"`
+	ID              objectid.ObjectID `bson:"_id,omitempty" json:"_id,omitempty"`
+	ItemID          uuuid.UUID        `bson:"itemID,omitempty" json:"itemID,omitempty"`
+	DateArrived     int64             `bson:"dateArrived,omitempty" json:"dateArrived,omitempty"`
+	DateSold        int64             `bson:"dateSold,omitempty" json:"dateSold,omitempty"`
+	DeviceID        uuuid.UUID        `bson:"deviceID,omitempty" json:"deviceID,omitempty"`
+	DonateWeight    float64           `bson:"donateWeight,omitempty" json:"donateWeight,omitempty"`
+	Lot             string            `bson:"lot,omitempty" json:"lot,omitempty"`
+	Name            string            `bson:"name,omitempty" json:"name,omitempty"`
+	Origin          string            `bson:"origin,omitempty" json:"origin,omitempty"`
+	Price           float64           `bson:"price,omitempty" json:"price,omitempty"`
+	RSCustomerID    uuuid.UUID        `bson:"rsCustomerID,omitempty" json:"rsCustomerID,omitempty"`
+	FlashSaleWeight float64           `bson:"flashSaleWeight,omitempty" json:"flashSaleWeight,omitempty"`
+	SKU             string            `bson:"sku,omitempty" json:"sku,omitempty"`
+	SoldWeight      float64           `bson:"soldWeight,omitempty" json:"soldWeight,omitempty"`
+	Timestamp       int64             `bson:"timestamp,omitempty" json:"timestamp,omitempty"`
+	TotalWeight     float64           `bson:"totalWeight,omitempty" json:"totalWeight,omitempty"`
+	UPC             string            `bson:"upc,omitempty" json:"upc,omitempty"`
+	WasteWeight     float64           `bson:"wasteWeight,omitempty" json:"wasteWeight,omitempty"`
+	OnFlashSale     bool              `bson:"onFlashSale,omitempty" json:"onFlashSale,omitempty"`
 }
 
 // MarshalBSON returns bytes of BSON-type.
 func (i Inventory) MarshalBSON() ([]byte, error) {
 	in := map[string]interface{}{
-		"itemID":       i.ItemID.String(),
-		"dateArrived":  i.DateArrived,
-		"dateSold":     i.DateSold,
-		"deviceID":     i.DeviceID.String(),
-		"donateWeight": i.DonateWeight,
-		"lot":          i.Lot,
-		"name":         i.Name,
-		"origin":       i.Origin,
-		"price":        i.Price,
-		"rsCustomerID": i.RSCustomerID.String(),
-		"salePrice":    i.SalePrice,
-		"sku":          i.SKU,
-		"soldWeight":   i.SoldWeight,
-		"timestamp":    i.Timestamp,
-		"totalWeight":  i.TotalWeight,
-		"upc":          i.UPC,
-		"wasteWeight":  i.WasteWeight,
+		"itemID":          i.ItemID.String(),
+		"dateArrived":     i.DateArrived,
+		"dateSold":        i.DateSold,
+		"deviceID":        i.DeviceID.String(),
+		"donateWeight":    i.DonateWeight,
+		"lot":             i.Lot,
+		"name":            i.Name,
+		"origin":          i.Origin,
+		"onFlashSale":     i.OnFlashSale,
+		"price":           i.Price,
+		"rsCustomerID":    i.RSCustomerID.String(),
+		"flashSaleWeight": i.FlashSaleWeight,
+		"sku":             i.SKU,
+		"soldWeight":      i.SoldWeight,
+		"timestamp":       i.Timestamp,
+		"totalWeight":     i.TotalWeight,
+		"upc":             i.UPC,
+		"wasteWeight":     i.WasteWeight,
 	}
 
 	if i.ID != objectid.NilObjectID {
@@ -67,23 +69,24 @@ func (i Inventory) MarshalBSON() ([]byte, error) {
 // MarshalJSON returns bytes of JSON-type.
 func (i *Inventory) MarshalJSON() ([]byte, error) {
 	in := map[string]interface{}{
-		"itemID":       i.ItemID.String(),
-		"dateArrived":  i.DateArrived,
-		"dateSold":     i.DateSold,
-		"deviceID":     i.DeviceID.String(),
-		"donateWeight": i.DonateWeight,
-		"lot":          i.Lot,
-		"name":         i.Name,
-		"origin":       i.Origin,
-		"price":        i.Price,
-		"rsCustomerID": i.RSCustomerID.String(),
-		"salePrice":    i.SalePrice,
-		"sku":          i.SKU,
-		"soldWeight":   i.SoldWeight,
-		"timestamp":    i.Timestamp,
-		"totalWeight":  i.TotalWeight,
-		"upc":          i.UPC,
-		"wasteWeight":  i.WasteWeight,
+		"itemID":          i.ItemID.String(),
+		"dateArrived":     i.DateArrived,
+		"dateSold":        i.DateSold,
+		"deviceID":        i.DeviceID.String(),
+		"donateWeight":    i.DonateWeight,
+		"lot":             i.Lot,
+		"name":            i.Name,
+		"origin":          i.Origin,
+		"onFlashSale":     i.OnFlashSale,
+		"price":           i.Price,
+		"rsCustomerID":    i.RSCustomerID.String(),
+		"flashSaleWeight": i.FlashSaleWeight,
+		"sku":             i.SKU,
+		"soldWeight":      i.SoldWeight,
+		"timestamp":       i.Timestamp,
+		"totalWeight":     i.TotalWeight,
+		"upc":             i.UPC,
+		"wasteWeight":     i.WasteWeight,
 	}
 
 	if i.ID != objectid.NilObjectID {
@@ -205,10 +208,10 @@ func (i *Inventory) unmarshalFromMap(m map[string]interface{}) error {
 			return err
 		}
 	}
-	if m["salePrice"] != nil {
-		i.SalePrice, err = util.AssertFloat64(m["salePrice"])
+	if m["flashSaleWeight"] != nil {
+		i.FlashSaleWeight, err = util.AssertFloat64(m["flashSaleWeight"])
 		if err != nil {
-			err = errors.Wrap(err, "Error while asserting SalePrice")
+			err = errors.Wrap(err, "Error while asserting FlashSaleWeight")
 			return err
 		}
 	}
@@ -243,6 +246,12 @@ func (i *Inventory) unmarshalFromMap(m map[string]interface{}) error {
 		i.UPC, assertOK = m["upc"].(string)
 		if !assertOK {
 			return errors.New("Error while asserting UPC")
+		}
+	}
+	if m["onFlashSale"] != nil {
+		i.OnFlashSale, assertOK = m["onFlashSale"].(bool)
+		if !assertOK {
+			return errors.New("Error while asserting OnFlashSale")
 		}
 	}
 	if m["wasteWeight"] != nil {
