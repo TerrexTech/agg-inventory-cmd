@@ -12,13 +12,13 @@ import (
 )
 
 // Insert handles "insert" events.
-func Insert(collection *mongo.Collection, event *model.Event) *model.KafkaResponse {
+func Insert(collection *mongo.Collection, event *model.Event) *model.Document {
 	inv := &Inventory{}
 	err := json.Unmarshal(event.Data, inv)
 	if err != nil {
 		err = errors.Wrap(err, "Insert: Error while unmarshalling Event-data")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -33,7 +33,7 @@ func Insert(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 		err = errors.New("missing ItemID")
 		err = errors.Wrap(err, "Insert")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -48,7 +48,7 @@ func Insert(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 	if err != nil {
 		err = errors.Wrap(err, "Insert: Error Inserting Inventory into Mongo")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -63,7 +63,7 @@ func Insert(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 		err = errors.New("error asserting InsertedID from InsertResult to ObjectID")
 		err = errors.Wrap(err, "Insert")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -79,7 +79,7 @@ func Insert(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 	if err != nil {
 		err = errors.Wrap(err, "Insert: Error marshalling Inventory Insert-result")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -90,7 +90,7 @@ func Insert(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 		}
 	}
 
-	return &model.KafkaResponse{
+	return &model.Document{
 		AggregateID:   event.AggregateID,
 		CorrelationID: event.CorrelationID,
 		Result:        result,

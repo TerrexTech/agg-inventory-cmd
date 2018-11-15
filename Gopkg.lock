@@ -10,6 +10,14 @@
   version = "v1.19.0"
 
 [[projects]]
+  digest = "1:3c4ee4733981763e5d936ec61e82a72ed1394c6b494ce2a83417e9c039c6b94b"
+  name = "github.com/TerrexTech/go-agg-framer"
+  packages = ["framer"]
+  pruneopts = "UT"
+  revision = "3feadb1260fa252f42daeacd26330ba1a42b48dc"
+  version = "v1.0.0"
+
+[[projects]]
   digest = "1:9e040726ee775fa241bf96d3c11533a5312d9bcb00a594b63679bff456a4522c"
   name = "github.com/TerrexTech/go-commonutils"
   packages = ["commonutil"]
@@ -18,23 +26,20 @@
   version = "v3.1.0"
 
 [[projects]]
-  digest = "1:b374152c0b4b0dff7c0236ed48d0fdee003e009876dbd7cb642d9b4a7f884f2b"
+  digest = "1:764f1189dc83c2e0113b78274484b1378e28d480619f8020149c558b5d942937"
   name = "github.com/TerrexTech/go-eventspoll"
-  packages = [
-    "errors",
-    "poll",
-  ]
+  packages = ["poll"]
   pruneopts = "UT"
-  revision = "c2c40a442eab5325df33f65f6d7aacfee5bbf944"
-  version = "v4.0.0"
+  revision = "ea1961eb515c67be56433435140374b9cbdcf7fe"
+  version = "v5.1.0"
 
 [[projects]]
-  digest = "1:0cc3c49e3d25739ff9b5cbab32eb5e63f4d2ea3c9b3262b02f45c081d6fc1eeb"
+  digest = "1:d5b85fd27be07e0eb6b9ad4119c28f3688d4411fdde9e515ffdbc47edb8bf4d7"
   name = "github.com/TerrexTech/go-eventstore-models"
   packages = ["model"]
   pruneopts = "UT"
-  revision = "9b039f75d51b77ce510458f42038b5b29fa57936"
-  version = "v4.1.0"
+  revision = "e54901c922e3963f6a73424e5303be2499c18785"
+  version = "v5.0.0"
 
 [[projects]]
   digest = "1:017b08c994a864ea4e94f1837037c14087f784a1e99d54173eba9050f7a81f74"
@@ -366,7 +371,7 @@
   name = "golang.org/x/crypto"
   packages = ["pbkdf2"]
   pruneopts = "UT"
-  revision = "e4dc69e5b2fd71dcaf8bd5d054eb936deb78d1fa"
+  revision = "3d3f9f413869b949e48070b5bc593aa22cc2b8f2"
 
 [[projects]]
   branch = "master"
@@ -385,7 +390,7 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "03003ca0c849e57b6ea29a4bab8d3cb6e4d568fe"
+  revision = "adae6a3d119ae4890b46832a2e88a95adc62b8e7"
 
 [[projects]]
   branch = "master"
@@ -523,6 +528,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Shopify/sarama",
+    "github.com/TerrexTech/go-agg-framer/framer",
     "github.com/TerrexTech/go-commonutils/commonutil",
     "github.com/TerrexTech/go-eventspoll/poll",
     "github.com/TerrexTech/go-eventstore-models/model",

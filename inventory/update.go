@@ -21,7 +21,7 @@ func Update(
 	etcd *clientv3.Client,
 	collection *mongo.Collection,
 	event *model.Event,
-) *model.KafkaResponse {
+) *model.Document {
 	switch event.ServiceAction {
 	case "createSale":
 		return createSale(etcd, collection, event)
