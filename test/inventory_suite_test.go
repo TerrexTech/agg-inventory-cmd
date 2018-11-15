@@ -99,20 +99,20 @@ var _ = Describe("InventoryAggregate", func() {
 		Expect(err).ToNot(HaveOccurred())
 
 		mockInv = &inventory.Inventory{
-			ItemID:       itemID,
-			DateArrived:  time.Now().Unix(),
-			DeviceID:     deviceID,
-			Lot:          "test-lot",
-			Name:         "test-name",
-			Origin:       "test-origin",
-			Price:        13.4,
-			RSCustomerID: rsCustomerID,
-			SalePrice:    12.23,
-			SKU:          "test-sku",
-			Timestamp:    time.Now().Unix(),
-			TotalWeight:  300,
-			UPC:          "test-upc",
-			WasteWeight:  12,
+			ItemID:          itemID,
+			DateArrived:     time.Now().Unix(),
+			DeviceID:        deviceID,
+			Lot:             "test-lot",
+			Name:            "test-name",
+			Origin:          "test-origin",
+			Price:           13.4,
+			RSCustomerID:    rsCustomerID,
+			FlashSaleWeight: 0,
+			SKU:             "test-sku",
+			Timestamp:       time.Now().Unix(),
+			TotalWeight:     300,
+			UPC:             "test-upc",
+			WasteWeight:     12,
 		}
 		marshalInv, err := json.Marshal(mockInv)
 		Expect(err).ToNot(HaveOccurred())
@@ -174,6 +174,7 @@ var _ = Describe("InventoryAggregate", func() {
 				}
 				return false
 			}
+			log.Println(mockInv.ItemID)
 
 			handler := &msgHandler{msgCallback}
 			c.Consume(context.Background(), handler)
@@ -187,6 +188,7 @@ var _ = Describe("InventoryAggregate", func() {
 			Expect(assertOK).To(BeTrue())
 			Expect(findInv).To(Equal(mockInv))
 
+			log.Fatalln("")
 			close(done)
 		}, 20)
 

@@ -1,6 +1,8 @@
 package inventory
 
 import (
+	"log"
+
 	"github.com/TerrexTech/go-eventstore-models/model"
 	"github.com/TerrexTech/go-mongoutils/mongo"
 	"github.com/coreos/etcd/clientv3"
@@ -22,8 +24,9 @@ func Update(
 	collection *mongo.Collection,
 	event *model.Event,
 ) *model.Document {
+	log.Println(event.ServiceAction)
 	switch event.ServiceAction {
-	case "createSale":
+	case "createSale", "createFlashSale":
 		return createSale(etcd, collection, event)
 	default:
 		return updateInventory(collection, event)
