@@ -275,7 +275,10 @@ func validateSaleItems(
 			lockSession.Close()
 			continue
 		}
-		findResult, err := collection.FindOne(itemMap)
+		findArgs := map[string]interface{}{
+			"itemID": itemIDStr,
+		}
+		findResult, err := collection.FindOne(findArgs)
 		if err != nil {
 			err := errors.Wrap(err, "SaleCreated-Event: Error getting Item from database")
 			log.Println(err)
@@ -300,7 +303,8 @@ func validateSaleItems(
 			continue
 		}
 
-		totalSoldWeight := inv.SoldWeight + soldWeight
+		// Temporary fix for duplicated message-issue
+		totalSoldWeight := inv.SoldWeight + (soldWeight / 2)
 		cumWeight := totalSoldWeight + inv.WasteWeight + inv.DonateWeight
 		if cumWeight > inv.TotalWeight {
 			err := errors.New("sale-weight exceeds the total available weight")
@@ -317,7 +321,7 @@ func validateSaleItems(
 		updateArgs := map[string]interface{}{
 			"soldWeight": totalSoldWeight,
 		}
-		updateResult, err := collection.UpdateMany(itemMap, updateArgs)
+		updateResult, err := collection.UpdateMany(findArgs, updateArgs)
 		if err != nil {
 			err = errors.Wrap(err, "SaleCreated-Event: Error writing new weight to database")
 			log.Println(err)
