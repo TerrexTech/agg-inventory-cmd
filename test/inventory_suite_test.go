@@ -152,7 +152,7 @@ var _ = Describe("InventoryAggregate", func() {
 			})
 			msgCallback := func(msg *sarama.ConsumerMessage) bool {
 				defer GinkgoRecover()
-				kr := &model.KafkaResponse{}
+				kr := &model.Document{}
 				err := json.Unmarshal(msg.Value, kr)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -187,7 +187,6 @@ var _ = Describe("InventoryAggregate", func() {
 			Expect(assertOK).To(BeTrue())
 			Expect(findInv).To(Equal(mockInv))
 
-			// log.Fatalln("")
 			close(done)
 		}, 20)
 
@@ -310,7 +309,7 @@ var _ = Describe("InventoryAggregate", func() {
 			})
 			msgCallback := func(msg *sarama.ConsumerMessage) bool {
 				defer GinkgoRecover()
-				kr := &model.KafkaResponse{}
+				kr := &model.Document{}
 				err := json.Unmarshal(msg.Value, kr)
 				Expect(err).ToNot(HaveOccurred())
 
@@ -382,7 +381,7 @@ var _ = Describe("InventoryAggregate", func() {
 			})
 			msgCallback := func(msg *sarama.ConsumerMessage) bool {
 				defer GinkgoRecover()
-				kr := &model.KafkaResponse{}
+				kr := &model.Document{}
 				err := json.Unmarshal(msg.Value, kr)
 				Expect(err).ToNot(HaveOccurred())
 

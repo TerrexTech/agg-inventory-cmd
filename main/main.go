@@ -5,6 +5,9 @@ import (
 	"os"
 	"time"
 
+	"github.com/TerrexTech/go-agg-framer/framer"
+	"github.com/TerrexTech/go-kafkautils/kafka"
+
 	"github.com/TerrexTech/agg-inventory-cmd/inventory"
 	"github.com/TerrexTech/go-commonutils/commonutil"
 	"github.com/TerrexTech/go-eventspoll/poll"
@@ -76,7 +79,6 @@ func main() {
 		KafkaConfig: *kc,
 		MongoConfig: *mc,
 	}
-
 	eventPoll, err := poll.Init(ioConfig)
 	if err != nil {
 		err = errors.Wrap(err, "Error creating EventPoll service")
@@ -103,9 +105,20 @@ func main() {
 	}
 	log.Println("ETCD Ready")
 
+	kafkaBrokers := *commonutil.ParseHosts(
+		os.Getenv("KAFKA_BROKERS"),
+	)
+	producerConfig := &kafka.ProducerConfig{
+		KafkaBrokers: kafkaBrokers,
+	}
+	topicConfig := &framer.TopicConfig{
+		DocumentTopic: os.Getenv("KAFKA_PRODUCER_RESPONSE_TOPIC"),
+	}
+	frm, err := framer.New(eventPoll.Context(), producerConfig, topicConfig)
+
 	for {
 		select {
-		case <-eventPoll.RoutinesCtx().Done():
+		case <-eventPoll.Context().Done():
 			err = errors.New("service-context closed")
 			log.Fatalln(err)
 
@@ -120,10 +133,7 @@ func main() {
 					log.Println(err)
 					return
 				}
-				kafkaResp := inventory.Delete(mc.AggCollection, &eventResp.Event)
-				if kafkaResp != nil {
-					eventPoll.ProduceResult() <- kafkaResp
-				}
+				frm.Document <- inventory.Delete(mc.AggCollection, &eventResp.Event)
 			}(eventResp)
 
 		case eventResp := <-eventPoll.Insert():
@@ -137,10 +147,7 @@ func main() {
 					log.Println(err)
 					return
 				}
-				kafkaResp := inventory.Insert(mc.AggCollection, &eventResp.Event)
-				if kafkaResp != nil {
-					eventPoll.ProduceResult() <- kafkaResp
-				}
+				frm.Document <- inventory.Insert(mc.AggCollection, &eventResp.Event)
 			}(eventResp)
 
 		case eventResp := <-eventPoll.Update():
@@ -154,10 +161,7 @@ func main() {
 					log.Println(err)
 					return
 				}
-				kafkaResp := inventory.Update(etcd, mc.AggCollection, &eventResp.Event)
-				if kafkaResp != nil {
-					eventPoll.ProduceResult() <- kafkaResp
-				}
+				frm.Document <- inventory.Update(etcd, mc.AggCollection, &eventResp.Event)
 			}(eventResp)
 		}
 	}

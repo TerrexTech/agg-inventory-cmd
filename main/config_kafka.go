@@ -21,7 +21,6 @@ func loadKafkaConfig() (*poll.KafkaConfig, error) {
 	cEventTopic := os.Getenv("KAFKA_CONSUMER_EVENT_TOPIC")
 	cEventQueryTopic := os.Getenv("KAFKA_CONSUMER_EVENT_QUERY_TOPIC")
 	pEventQueryTopic := os.Getenv("KAFKA_PRODUCER_EVENT_QUERY_TOPIC")
-	pResponseTopic := os.Getenv("KAFKA_PRODUCER_RESPONSE_TOPIC")
 
 	cEventTopic = fmt.Sprintf("%s.%d", cEventTopic, inventory.AggregateID)
 	cEventQueryTopic = fmt.Sprintf("%s.%d", cEventQueryTopic, inventory.AggregateID)
@@ -41,11 +40,7 @@ func loadKafkaConfig() (*poll.KafkaConfig, error) {
 		ESQueryReqProd: &kafka.ProducerConfig{
 			KafkaBrokers: kafkaBrokers,
 		},
-		SvcResponseProd: &kafka.ProducerConfig{
-			KafkaBrokers: kafkaBrokers,
-		},
-		ESQueryReqTopic:  pEventQueryTopic,
-		SvcResponseTopic: pResponseTopic,
+		ESQueryReqTopic: pEventQueryTopic,
 	}
 
 	return kc, nil

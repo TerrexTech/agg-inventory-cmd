@@ -18,6 +18,8 @@ func TestInventory(t *testing.T) {
 }
 
 var _ = Describe("InventoryAggregate", func() {
+	// var etcd *clientv3.Client
+
 	Describe("delete", func() {
 		It("should return error if filter is empty", func() {
 			uuid, err := uuuid.NewV4()
@@ -102,7 +104,7 @@ var _ = Describe("InventoryAggregate", func() {
 				Version:       3,
 				YearBucket:    2018,
 			}
-			kr := Update(nil, mockEvent)
+			kr := Update(nil, nil, mockEvent)
 			Expect(kr.AggregateID).To(Equal(mockEvent.AggregateID))
 			Expect(kr.CorrelationID).To(Equal(mockEvent.CorrelationID))
 			Expect(kr.Error).ToNot(BeEmpty())
@@ -137,7 +139,7 @@ var _ = Describe("InventoryAggregate", func() {
 				Version:       3,
 				YearBucket:    2018,
 			}
-			kr := Update(nil, mockEvent)
+			kr := Update(nil, nil, mockEvent)
 			Expect(kr.AggregateID).To(Equal(mockEvent.AggregateID))
 			Expect(kr.CorrelationID).To(Equal(mockEvent.CorrelationID))
 			Expect(kr.Error).ToNot(BeEmpty())
@@ -174,7 +176,7 @@ var _ = Describe("InventoryAggregate", func() {
 				Version:       3,
 				YearBucket:    2018,
 			}
-			kr := Update(nil, mockEvent)
+			kr := Update(nil, nil, mockEvent)
 			Expect(kr.AggregateID).To(Equal(mockEvent.AggregateID))
 			Expect(kr.CorrelationID).To(Equal(mockEvent.CorrelationID))
 			Expect(kr.Error).ToNot(BeEmpty())

@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SaleItemResult is the result from updating the sale-item.
 type SaleItemResult struct {
 	ItemID          uuuid.UUID `json:"itemID,omitempty"`
 	Error           string     `json:"error,omitempty"`
@@ -28,6 +29,7 @@ type SaleItemResult struct {
 	TotalWeight     float64    `json:"totalWeight,omitempty"`
 }
 
+// SaleValidationResp is the response when a sale is validated.
 type SaleValidationResp struct {
 	OriginalRequest map[string]interface{} `json:"originalRequest,omitempty"`
 	Result          []SaleItemResult       `json:"result,omitempty"`
@@ -39,13 +41,13 @@ func createSale(
 	etcd *clientv3.Client,
 	collection *mongo.Collection,
 	event *model.Event,
-) *model.KafkaResponse {
+) *model.Document {
 	m := map[string]interface{}{}
 	err := json.Unmarshal(event.Data, &m)
 	if err != nil {
 		err = errors.Wrap(err, "SaleCreated-Event: Error unmarshalling sale-data")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -57,7 +59,7 @@ func createSale(
 	}
 
 	if m["items"] == nil {
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -73,7 +75,7 @@ func createSale(
 		err = errors.New("error asserting Items to array")
 		err = errors.Wrap(err, "SaleCreated-Event")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -93,7 +95,7 @@ func createSale(
 	if err != nil {
 		err = errors.Wrap(err, "SaleCreated-Event: Error marshalling result")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -141,7 +143,7 @@ func createSale(
 
 	producer.Input() <- kafka.CreateMessage(topic, saleEvent)
 
-	return &model.KafkaResponse{
+	return &model.Document{
 		AggregateID:   event.AggregateID,
 		CorrelationID: event.CorrelationID,
 		EventAction:   "insert",

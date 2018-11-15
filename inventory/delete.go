@@ -14,14 +14,14 @@ type deleteResult struct {
 }
 
 // Delete handles "delete" events.
-func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaResponse {
+func Delete(collection *mongo.Collection, event *model.Event) *model.Document {
 	filter := map[string]interface{}{}
 
 	err := json.Unmarshal(event.Data, &filter)
 	if err != nil {
 		err = errors.Wrap(err, "Delete: Error while unmarshalling Event-data")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -36,7 +36,7 @@ func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 		err = errors.New("blank filter provided")
 		err = errors.Wrap(err, "Delete")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -51,7 +51,7 @@ func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 	if err != nil {
 		err = errors.Wrap(err, "Delete: Error in DeleteMany")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -67,7 +67,7 @@ func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 	if err != nil {
 		err = errors.Wrap(err, "Delete: Error marshalling Inventory Delete-result")
 		log.Println(err)
-		return &model.KafkaResponse{
+		return &model.Document{
 			AggregateID:   event.AggregateID,
 			CorrelationID: event.CorrelationID,
 			Error:         err.Error(),
@@ -78,7 +78,7 @@ func Delete(collection *mongo.Collection, event *model.Event) *model.KafkaRespon
 		}
 	}
 
-	return &model.KafkaResponse{
+	return &model.Document{
 		AggregateID:   event.AggregateID,
 		CorrelationID: event.CorrelationID,
 		EventAction:   event.EventAction,
