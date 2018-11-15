@@ -115,6 +115,10 @@ func main() {
 		DocumentTopic: os.Getenv("KAFKA_PRODUCER_RESPONSE_TOPIC"),
 	}
 	frm, err := framer.New(eventPoll.Context(), producerConfig, topicConfig)
+	if err != nil {
+		err = errors.Wrap(err, "Failed initializing Framer")
+		log.Fatalln(err)
+	}
 
 	for {
 		select {
