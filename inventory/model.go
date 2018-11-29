@@ -36,6 +36,7 @@ type Inventory struct {
 	WasteWeight        float64           `bson:"wasteWeight,omitempty" json:"wasteWeight,omitempty"`
 	OnFlashSale        bool              `bson:"onFlashSale,omitempty" json:"onFlashSale,omitempty"`
 	FlashSaleTimestamp int64             `bson:"flashSaleTimestamp,omitempty" json:"flashSaleTimestamp,omitempty"`
+	ProjectedDate      int64             `bson:"projectedDate,omitempty" json:"projectedDate,omitempty"`
 }
 
 // MarshalBSON returns bytes of BSON-type.
@@ -60,6 +61,7 @@ func (i Inventory) MarshalBSON() ([]byte, error) {
 		"upc":                i.UPC,
 		"wasteWeight":        i.WasteWeight,
 		"flashSaleTimestamp": i.FlashSaleTimestamp,
+		"projectedDate":      i.ProjectedDate,
 	}
 
 	if i.ID != objectid.NilObjectID {
@@ -90,6 +92,7 @@ func (i *Inventory) MarshalJSON() ([]byte, error) {
 		"upc":                i.UPC,
 		"wasteWeight":        i.WasteWeight,
 		"flashSaleTimestamp": i.FlashSaleTimestamp,
+		"projectedDate":      i.ProjectedDate,
 	}
 
 	if i.ID != objectid.NilObjectID {
@@ -268,6 +271,13 @@ func (i *Inventory) unmarshalFromMap(m map[string]interface{}) error {
 		i.FlashSaleTimestamp, err = util.AssertInt64(m["flashSaleTimestamp"])
 		if err != nil {
 			err = errors.Wrap(err, "Error while asserting FlashSaleTimestamp")
+			return err
+		}
+	}
+	if m["projectedDate"] != nil {
+		i.ProjectedDate, err = util.AssertInt64(m["projectedDate"])
+		if err != nil {
+			err = errors.Wrap(err, "Error while asserting ProjectedDate")
 			return err
 		}
 	}
